@@ -4189,28 +4189,26 @@
           currentOffset = getPos();
           resumeTimer = setTimeout(resume, 800);
         });
-        /* Mouse wheel / trackpad: let scroll gestures nudge the track
-           directly too, not just click-drag. Vertical tracks use deltaY.
-           Horizontal tracks prefer deltaX (trackpad horizontal swipe) but
-           fall back to deltaY (plain mouse wheel) when deltaX is ~0, so a
-           normal mouse wheel still scrolls a horizontal carousel. */
-        track.addEventListener(
-          "wheel",
-          (e) => {
-            const delta = isY
-              ? e.deltaY
-              : Math.abs(e.deltaX) > Math.abs(e.deltaY)
-                ? e.deltaX
-                : e.deltaY;
-            e.preventDefault();
-            clearTimeout(resumeTimer);
-            freeze();
-            applyTransform(currentOffset - delta);
-            currentOffset = getPos();
-            resumeTimer = setTimeout(resume, 800);
-          },
-          { passive: false },
-        );
+        /* Trackpad horizontal swipe: only for horizontal tracks, and only
+           when the gesture is clearly sideways (|deltaX| > |deltaY|). This
+           lets a trackpad swipe nudge the carousel without hijacking a
+           normal vertical mouse-wheel scroll, which would otherwise trap
+           the page scroll the instant the cursor passes over the track. */
+        if (!isY) {
+          track.addEventListener(
+            "wheel",
+            (e) => {
+              if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+              e.preventDefault();
+              clearTimeout(resumeTimer);
+              freeze();
+              applyTransform(currentOffset - e.deltaX);
+              currentOffset = getPos();
+              resumeTimer = setTimeout(resume, 800);
+            },
+            { passive: false },
+          );
+        }
       }
       document.querySelectorAll(".carousel-track,.ind-track").forEach((t) => {
         t.style.cursor = "grab";
