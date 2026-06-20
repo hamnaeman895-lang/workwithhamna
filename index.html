@@ -1682,7 +1682,9 @@
         flex-direction: column;
         gap: 12px;
         overflow-y: auto;
+        overflow-x: hidden;
         min-height: 0;
+        min-width: 0;
         padding-right: 10px;
         margin-right: -10px;
         scrollbar-width: thin;
@@ -1761,13 +1763,15 @@
       }
       .modal-links.is-gallery {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+        grid-auto-rows: min-content;
         gap: 22px;
         align-content: start;
+        min-width: 0;
       }
       .screenshot-card {
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-rows: auto auto;
         border-radius: 16px;
         border: 1.5px solid #f0dce4;
         background: #fdf6f8;
@@ -1777,6 +1781,7 @@
           border-color 0.2s,
           box-shadow 0.2s,
           transform 0.2s;
+        min-width: 0;
         flex-shrink: 0;
       }
       .screenshot-card:hover {
@@ -1785,13 +1790,19 @@
         transform: translateY(-4px);
       }
       .screenshot-card-frame {
+        position: relative;
         width: 100%;
         aspect-ratio: 16 / 10;
+        min-height: 120px;
         background: #fff;
         overflow: hidden;
         border-bottom: 1.5px solid #f0dce4;
+        flex-shrink: 0;
       }
       .screenshot-card-frame img {
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
         height: 100%;
         object-fit: cover;
@@ -4233,7 +4244,7 @@
                 label: "KORESYS",
                 url: "https://koresys.co/",
                 image: "images/koresys.png",
-              }
+              },
             ],
           },
           quora: {
