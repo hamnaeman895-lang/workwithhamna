@@ -1741,6 +1741,90 @@
         stroke-linecap: round;
         stroke-linejoin: round;
       }
+      .modal-link-thumb {
+        width: 52px;
+        height: 52px;
+        border-radius: 10px;
+        flex-shrink: 0;
+        overflow: hidden;
+        background: linear-gradient(135deg, #f9b8c0, #e8408a33);
+        border: 1px solid #f0dce4;
+      }
+      .modal-link-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .modal-box.is-gallery {
+        max-width: 920px;
+      }
+      .modal-links.is-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 22px;
+        align-content: start;
+      }
+      .screenshot-card {
+        display: flex;
+        flex-direction: column;
+        border-radius: 16px;
+        border: 1.5px solid #f0dce4;
+        background: #fdf6f8;
+        text-decoration: none;
+        overflow: hidden;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s,
+          transform 0.2s;
+        flex-shrink: 0;
+      }
+      .screenshot-card:hover {
+        border-color: #e8408a;
+        box-shadow: 0 14px 30px rgba(232, 64, 138, 0.18);
+        transform: translateY(-4px);
+      }
+      .screenshot-card-frame {
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        background: #fff;
+        overflow: hidden;
+        border-bottom: 1.5px solid #f0dce4;
+      }
+      .screenshot-card-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
+        display: block;
+      }
+      .screenshot-card-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 14px 16px;
+      }
+      .screenshot-card-name {
+        font-family: "DM Sans", sans-serif;
+        font-size: 14.5px;
+        font-weight: 600;
+        color: #2a1018;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .screenshot-card-info .modal-arrow {
+        flex-shrink: 0;
+      }
+      @media (max-width: 640px) {
+        .modal-box.is-gallery {
+          max-width: 100%;
+        }
+        .modal-links.is-gallery {
+          grid-template-columns: 1fr;
+        }
+      }
       .modal-link-text {
         flex: 1;
         min-width: 0;
@@ -4113,7 +4197,44 @@
             title: "Web Copies",
             subtitle:
               "Home, service & landing pages built to convert visitors into leads.",
-            links: [],
+            gallery: true,
+            links: [
+              {
+                label: "The Corporate Lunch Box",
+                url: "https://thecorporatelunchbox.com/",
+                image: "images/thecorporatelunchbox.png",
+              },
+              {
+                label: "SEEMAB Consultants LTD",
+                url: "https://seemabconsultantsltd.co.uk/",
+                image: "images/seemab.png",
+              },
+              {
+                label: "Leather for Kids",
+                url: "https://leatherdiykids.com/",
+                image: "images/leatherforkids.png",
+              },
+              {
+                label: "iLink Tours",
+                url: "https://ilinktours.com/6-nights-budget-umrah/",
+                image: "images/iLink.png",
+              },
+              {
+                label: "Tasarr",
+                url: "https://tasarr.com/",
+                image: "images/tasarr.png",
+              },
+              {
+                label: "Globix Soft",
+                url: "https://globixsoft.com/",
+                image: "images/globixsoft.png",
+              },
+              {
+                label: "KORESYS",
+                url: "https://koresys.co/",
+                image: "images/koresys.png",
+              }
+            ],
           },
           quora: {
             tag: "03 — Quora",
@@ -4124,6 +4245,7 @@
           },
         };
         const overlay = document.getElementById("samplesModal");
+        const modalBox = overlay.querySelector(".modal-box");
         const closeBtn = document.getElementById("modalClose");
         const tagEl = document.getElementById("modalTag");
         const titleEl = document.getElementById("modalTitle");
@@ -4136,9 +4258,26 @@
           titleEl.textContent = data.title;
           subEl.textContent = data.subtitle;
           linksEl.innerHTML = "";
+          modalBox.classList.toggle("is-gallery", !!data.gallery);
+          linksEl.classList.toggle("is-gallery", !!data.gallery);
           if (!data.links.length) {
             linksEl.innerHTML =
               '<p class="modal-empty">Samples coming soon — check back!</p>';
+          } else if (data.gallery) {
+            data.links.forEach((item) => {
+              const el = document.createElement("a");
+              el.className = "screenshot-card";
+              el.href = item.url;
+              el.target = "_blank";
+              el.rel = "noopener";
+              el.innerHTML =
+                '<div class="screenshot-card-frame"><img src="' +
+                item.image +
+                '" alt="" loading="lazy" /></div><div class="screenshot-card-info"><span class="screenshot-card-name">' +
+                item.label +
+                '</span><span class="modal-arrow">→</span></div>';
+              linksEl.appendChild(el);
+            });
           } else {
             data.links.forEach((item) => {
               const el = document.createElement("a");
@@ -4146,8 +4285,14 @@
               el.href = item.url;
               el.target = "_blank";
               el.rel = "noopener";
+              const mediaHtml = item.image
+                ? '<div class="modal-link-thumb"><img src="' +
+                  item.image +
+                  '" alt="" loading="lazy" /></div>'
+                : '<div class="modal-link-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>';
               el.innerHTML =
-                '<div class="modal-link-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div><div class="modal-link-text"><span class="modal-link-label">' +
+                mediaHtml +
+                '<div class="modal-link-text"><span class="modal-link-label">' +
                 item.label +
                 '</span><span class="modal-link-url">' +
                 item.url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0] +
