@@ -251,21 +251,34 @@
           display: none;
         }
         .nav-logo {
-          position: absolute;
-          left: 50%;
-          transform: translateX(-50%);
+          margin: 0 auto;
+        }
+        /* Invisible spacer the same width as the hamburger button, so the
+           logo sits truly centered between two equal edges instead of the
+           pill looking lopsided with empty space on the right. */
+        .nav-spacer {
+          display: block;
+          width: 36px;
+          height: 36px;
+          flex-shrink: 0;
+        }
+      }
+      @media (min-width: 769px) {
+        .nav-spacer {
+          display: none;
         }
       }
 
       /* HERO */
       #hero {
         min-height: 100vh;
+        min-height: 100svh;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-direction: column;
         text-align: center;
-        padding: 40px 24px;
+        padding: 110px 24px 40px;
         position: relative;
         background:
           radial-gradient(ellipse at 20% 40%, #f2a8c0 0%, transparent 55%),
@@ -449,6 +462,19 @@
         }
         .stat-item::after {
           display: none;
+        }
+        /* 5 stats in a 2-column wrap leaves the last one stretched full
+           width and off-balance — cap it to match the column width above.
+           Only applies down to ~360px; below that everything is already a
+           single column, so the last item should match full width too. */
+        .stat-item:last-child {
+          flex: 0 1 45%;
+        }
+      }
+      @media (max-width: 360px) {
+        .stat-item,
+        .stat-item:last-child {
+          flex: 1 1 100%;
         }
       }
 
@@ -2412,6 +2438,10 @@
         .wwm-title {
           font-size: 22px;
         }
+        .wwm-close {
+          top: 10px;
+          right: 10px;
+        }
       }
     </style>
   </head>
@@ -2436,6 +2466,7 @@
         <a href="#contact">Contact</a>
       </div>
       <a href="#contact" class="nav-cta">Work with me</a>
+      <span class="nav-spacer" aria-hidden="true"></span>
     </nav>
 
     <!-- WORK WITH ME MODAL -->
@@ -2471,11 +2502,7 @@
           <div class="wwm-row">
             <div class="wwm-field">
               <label>Service Type</label>
-              <input
-                type="text"
-                id="wwm-role"
-                placeholder="Blog writing"
-              />
+              <input type="text" id="wwm-role" placeholder="Blog writing" />
             </div>
             <div class="wwm-field">
               <label>Company Name</label>
@@ -3922,16 +3949,36 @@
 
     <script>
       /* Active nav */
-      const sections = document.querySelectorAll("section[id]");
+      const sections = document.querySelectorAll("section[id], footer[id]");
       const navLinks = document.querySelectorAll("nav a, .side-nav-links a");
+      /* Nav only links to a few "anchor" sections, but every section on the
+         page should still light up the nearest relevant link as the user
+         scrolls through it — otherwise sections like Services or Tools leave
+         the previous link stuck active (or nothing active at all). */
+      const sectionToNavTarget = {
+        hero: "hero",
+        stats: "hero",
+        about: "about",
+        services: "expertise",
+        process: "expertise",
+        expertise: "expertise",
+        industries: "expertise",
+        tools: "expertise",
+        brands: "brands",
+        "writing-samples": "brands",
+        testimonials: "brands",
+        contact: "contact",
+      };
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
+              const targetId = sectionToNavTarget[entry.target.id];
+              if (!targetId) return;
               navLinks.forEach((l) => l.classList.remove("active"));
               document
                 .querySelectorAll(
-                  `nav a[href="#${entry.target.id}"], .side-nav-links a[href="#${entry.target.id}"]`,
+                  `nav a[href="#${targetId}"], .side-nav-links a[href="#${targetId}"]`,
                 )
                 .forEach((a) => a.classList.add("active"));
             }
@@ -4046,31 +4093,44 @@
       })();
 
       /* Drag-to-scroll carousels */
-      function makeDraggable(track) {
+      function makeDraggable(track, opts) {
+        const axis = (opts && opts.axis) || "x";
+        const isY = axis === "y";
         let isDown = false,
-          startX = 0,
+          startPos = 0,
           currentOffset = 0,
           resumeTimer = null;
-        const ANIM = track.classList.contains("ind-track")
-          ? "scrollInd"
-          : "scrollCarousel";
-        const DUR = track.classList.contains("ind-track") ? "40s" : "38s";
-        function getX() {
+        const ANIM =
+          (opts && opts.animationName) ||
+          (track.classList.contains("ind-track")
+            ? "scrollInd"
+            : "scrollCarousel");
+        const DUR =
+          (opts && opts.duration) ||
+          (track.classList.contains("ind-track") ? "40s" : "38s");
+        function getPos() {
           const m = window.getComputedStyle(track).transform;
           if (!m || m === "none") return 0;
-          return parseFloat(m.slice(7, -1).split(", ")[4]) || 0;
+          const parts = m.slice(7, -1).split(", ");
+          return parseFloat(parts[isY ? 5 : 4]) || 0;
+        }
+        function applyTransform(val) {
+          track.style.transform = isY
+            ? `translateY(${val}px)`
+            : `translateX(${val}px)`;
         }
         function freeze() {
-          currentOffset = getX();
+          currentOffset = getPos();
           track.style.animation = "none";
-          track.style.transform = `translateX(${currentOffset}px)`;
+          applyTransform(currentOffset);
         }
         function resume() {
-          const hw = track.scrollWidth / 2;
+          const full = isY ? track.scrollHeight : track.scrollWidth;
+          const hw = full / 2;
           let off = ((currentOffset % hw) + hw) % hw;
           if (off > 0) off -= hw;
           const remain = parseFloat(DUR) * (1 - Math.abs(off) / hw);
-          track.style.transform = `translateX(${off}px)`;
+          applyTransform(off);
           track.style.animation = "none";
           void track.offsetWidth;
           track.style.animation = `${ANIM} ${remain}s linear forwards`;
@@ -4093,7 +4153,7 @@
           clearTimeout(resumeTimer);
           freeze();
           track.style.cursor = "grabbing";
-          startX = e.pageX;
+          startPos = isY ? e.pageY : e.pageX;
         });
         document.addEventListener("mouseup", () => {
           if (!isDown) return;
@@ -4104,34 +4164,67 @@
         document.addEventListener("mousemove", (e) => {
           if (!isDown) return;
           e.preventDefault();
-          track.style.transform = `translateX(${currentOffset + (e.pageX - startX) * 1.2}px)`;
+          const pos = isY ? e.pageY : e.pageX;
+          applyTransform(currentOffset + (pos - startPos) * 1.2);
         });
-        let tx = 0;
+        let tPos = 0;
         track.addEventListener(
           "touchstart",
           (e) => {
             clearTimeout(resumeTimer);
             freeze();
-            tx = e.touches[0].pageX;
+            tPos = isY ? e.touches[0].pageY : e.touches[0].pageX;
           },
           { passive: true },
         );
         track.addEventListener(
           "touchmove",
           (e) => {
-            track.style.transform = `translateX(${currentOffset + (e.touches[0].pageX - tx) * 1.2}px)`;
+            const pos = isY ? e.touches[0].pageY : e.touches[0].pageX;
+            applyTransform(currentOffset + (pos - tPos) * 1.2);
           },
           { passive: true },
         );
         track.addEventListener("touchend", () => {
-          currentOffset = getX();
+          currentOffset = getPos();
           resumeTimer = setTimeout(resume, 800);
         });
+        /* Mouse wheel / trackpad: let scroll gestures nudge the track
+           directly too, not just click-drag. Vertical tracks use deltaY.
+           Horizontal tracks prefer deltaX (trackpad horizontal swipe) but
+           fall back to deltaY (plain mouse wheel) when deltaX is ~0, so a
+           normal mouse wheel still scrolls a horizontal carousel. */
+        track.addEventListener(
+          "wheel",
+          (e) => {
+            const delta = isY
+              ? e.deltaY
+              : Math.abs(e.deltaX) > Math.abs(e.deltaY)
+                ? e.deltaX
+                : e.deltaY;
+            e.preventDefault();
+            clearTimeout(resumeTimer);
+            freeze();
+            applyTransform(currentOffset - delta);
+            currentOffset = getPos();
+            resumeTimer = setTimeout(resume, 800);
+          },
+          { passive: false },
+        );
       }
       document.querySelectorAll(".carousel-track,.ind-track").forEach((t) => {
         t.style.cursor = "grab";
         makeDraggable(t);
       });
+      const brandsPanel = document.getElementById("brandsPanel");
+      if (brandsPanel) {
+        brandsPanel.style.cursor = "grab";
+        makeDraggable(brandsPanel, {
+          axis: "y",
+          animationName: "scrollBrandsY",
+          duration: "32s",
+        });
+      }
 
       /* Service card stacking */
       (function () {
