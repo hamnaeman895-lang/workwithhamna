@@ -4,7 +4,39 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hamna Eman — Writer</title>
+    <meta
+      name="description"
+      content="Hamna Eman is a content writer crafting blogs, web copy, and brand content that turns visitors into customers. Browse writing samples and get in touch."
+    />
+    <meta name="theme-color" content="#5a1e3a" />
     <link rel="icon" type="image/png" href="images/favicon.png" />
+
+    <!-- Open Graph / social previews (LinkedIn, WhatsApp, Facebook) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Hamna Eman — Writer" />
+    <meta
+      property="og:description"
+      content="Content writer crafting blogs, web copy, and brand content that turns visitors into customers."
+    />
+    <!-- TODO: replace with your real site URL once it's live -->
+    <meta property="og:url" content="https://yourdomain.com/" />
+    <!-- TODO: add a 1200×630px preview image to /images and point this at it -->
+    <meta property="og:image" content="images/og-cover.png" />
+
+    <!-- Twitter card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Hamna Eman — Writer" />
+    <meta
+      name="twitter:description"
+      content="Content writer crafting blogs, web copy, and brand content that turns visitors into customers."
+    />
+    <meta name="twitter:image" content="images/og-cover.png" />
+
+    <!-- TODO: replace with your real site URL once it's live -->
+    <link rel="canonical" href="https://yourdomain.com/" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap"
       rel="stylesheet"
@@ -21,6 +53,20 @@
       body {
         font-family: "DM Sans", sans-serif;
         overflow-x: hidden;
+      }
+
+      /* Respect OS-level "reduce motion" setting — turns off scroll-reveal,
+         marquees, hover transforms, etc. for users who get motion-sick or
+         have vestibular sensitivity. */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
       }
 
       /* NAV */
@@ -4245,6 +4291,24 @@
         onScroll();
       })();
 
+      /* Shared focus-trap helper — keeps Tab/Shift+Tab cycling inside an
+         open dialog instead of leaking focus out to the page behind it. */
+      function trapFocus(container, e) {
+        const focusable = container.querySelectorAll(
+          'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+
       /* Writing Samples Modal */
       (function () {
         const sampleData = {
@@ -4361,7 +4425,8 @@
         const titleEl = document.getElementById("modalTitle");
         const subEl = document.getElementById("modalSubtitle");
         const linksEl = document.getElementById("modalLinks");
-        function openModal(key) {
+        let lastFocused = null;
+        function openModal(key, trigger) {
           const data = sampleData[key];
           if (!data) return;
           tagEl.textContent = data.tag;
@@ -4412,34 +4477,46 @@
           }
           overlay.classList.add("open");
           document.body.style.overflow = "hidden";
+          lastFocused = trigger || document.activeElement;
+          closeBtn.focus();
         }
         function closeModal() {
           overlay.classList.remove("open");
           document.body.style.overflow = "";
+          if (lastFocused) lastFocused.focus();
         }
         document
           .querySelectorAll(".sample-card[data-modal]")
           .forEach((card) => {
-            card.addEventListener("click", () => openModal(card.dataset.modal));
+            card.addEventListener("click", () =>
+              openModal(card.dataset.modal, card),
+            );
           });
         closeBtn.addEventListener("click", closeModal);
         overlay.addEventListener("click", (e) => {
           if (e.target === overlay) closeModal();
         });
         document.addEventListener("keydown", (e) => {
+          if (!overlay.classList.contains("open")) return;
           if (e.key === "Escape") closeModal();
+          else if (e.key === "Tab") trapFocus(modalBox, e);
         });
       })();
 
       /* Work With Me Modal + Liquid Canvas */
       (function () {
         const overlay = document.getElementById("wwmModal");
+        const wwmBox = overlay.querySelector(".wwm-box");
         const closeBtn = document.getElementById("wwmClose");
         const submitBtn = document.getElementById("wwmSubmit");
         const toast = document.getElementById("wwmToast");
         const canvas = document.getElementById("wwmCanvas");
         const ctx = canvas.getContext("2d");
+        const prefersReducedMotion = window.matchMedia(
+          "(prefers-reduced-motion: reduce)",
+        ).matches;
         let raf = null;
+        let lastFocused = null;
 
         /* ── liquid blobs ── */
         const blobs = [
@@ -4483,6 +4560,10 @@
 
         function startLiquid() {
           resize();
+          if (prefersReducedMotion) {
+            drawBlobs(0); // static frame — no looping animation
+            return;
+          }
           if (!raf) raf = requestAnimationFrame(animate);
         }
         function stopLiquid() {
@@ -4497,15 +4578,18 @@
         });
 
         /* ── open / close ── */
-        function openModal() {
+        function openModal(trigger) {
           overlay.classList.add("open");
           document.body.style.overflow = "hidden";
+          lastFocused = trigger || document.activeElement;
           startLiquid();
+          document.getElementById("wwm-fn").focus();
         }
         function closeModal() {
           overlay.classList.remove("open");
           document.body.style.overflow = "";
           stopLiquid();
+          if (lastFocused) lastFocused.focus();
         }
 
         document
@@ -4519,7 +4603,7 @@
               if (sideNav) sideNav.classList.remove("open");
               if (navOverlay) navOverlay.classList.remove("open");
               if (toggle) toggle.classList.remove("open");
-              openModal();
+              openModal(btn);
             });
           });
 
@@ -4529,7 +4613,9 @@
             closeModal();
         });
         document.addEventListener("keydown", function (e) {
+          if (!overlay.classList.contains("open")) return;
           if (e.key === "Escape") closeModal();
+          else if (e.key === "Tab") trapFocus(wwmBox, e);
         });
 
         /* ── submit ── */
@@ -4621,16 +4707,60 @@
       (function () {
         const btn = document.getElementById("copyPhone");
         const toast = document.getElementById("copyToast");
+        const defaultToastText = toast.textContent;
         let timer = null;
+
+        function showToast(text) {
+          toast.textContent = text;
+          toast.classList.add("show");
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            toast.classList.remove("show");
+            toast.textContent = defaultToastText;
+          }, 2200);
+        }
+
+        // execCommand fallback for browsers without the Clipboard API
+        // (older Safari, non-HTTPS contexts where navigator.clipboard is unavailable)
+        function fallbackCopy(text) {
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.setAttribute("readonly", "");
+          textarea.style.position = "absolute";
+          textarea.style.left = "-9999px";
+          document.body.appendChild(textarea);
+          textarea.select();
+          let ok = false;
+          try {
+            ok = document.execCommand("copy");
+          } catch (err) {
+            ok = false;
+          }
+          document.body.removeChild(textarea);
+          return ok;
+        }
+
         btn.addEventListener("click", function () {
           const num = btn
             .querySelector(".contact-card-value")
             .textContent.trim();
-          navigator.clipboard.writeText(num).then(() => {
-            toast.classList.add("show");
-            clearTimeout(timer);
-            timer = setTimeout(() => toast.classList.remove("show"), 2200);
-          });
+
+          if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard
+              .writeText(num)
+              .then(() => showToast(defaultToastText))
+              .catch(() => {
+                showToast(
+                  fallbackCopy(num)
+                    ? defaultToastText
+                    : "Couldn't copy — " + num,
+                );
+              });
+          } else {
+            showToast(
+              fallbackCopy(num) ? defaultToastText : "Couldn't copy — " + num,
+            );
+          }
         });
       })();
     </script>
